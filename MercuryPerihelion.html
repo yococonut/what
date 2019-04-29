@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body onload='run();'>
+<h1>Mercury Perihelion</h1>
+<canvas id="c1" width="512" height="512" style='border:2px solid #000000'></canvas>
+<img id='Mercury' src='Mercury.jpg' style='display:none;'></br>
+<img id='Sun' src='Sun.png' style='display:none;'></br>
+<input type='button' onclick='init();' value='initialize'>
+<input type='button' onclick='running=!running;' value='run'>
+
+<!--Table of Values-->
+
+<table>
+    <tr>
+        <td>mMercury</td><td><input type='number' id='Mercurym' value= 1.66e-7></td>
+    </tr>
+    <tr>
+        <td>mSun</td><td><input type='number' id='Sunm' value=1></td>
+    </tr>
+    <tr>
+        <td>Mercury Orbit Radius</td><td><input type='number' id='rM0' value=4.60></td>
+    </tr>
+    <tr>
+        <td>Mercury Orbit Speed</td><td><input type='number' id='vM0' value=5.10e-1></td>
+    </tr>
+    <tr>
+        <td>Base Acceleration</td><td><input type='number' id='c_a' value=9.90e-1></td>
+    </tr>
+    <tr>
+        <td>Orbit Period of Mercury</td><td><input type='number' id='TM' value=8.80e+1></td>
+    </tr>
+    <tr>
+        <td>Schwarzschild Radius of Sun</td><td><input type='number' id='rS' value=2.95e-7></td>
+    </tr>
+    <tr>
+        <td>Specific Angular Momentum</td><td><input type='number' id='rL2' value=8.19e-7 ></td>
+    </tr>
+
+</table>
+
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+<!-- Computational script                                               -->
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+<script>
+var position={x:0,y:0} ;
+var cnvs = document.getElementById('c1') ;
+var fctx = cnvs.getContext('2d') ;   /* final drawing canvas */
+var width   = cnvs.width ;
+var height  = cnvs.height ;
+
+var bcnvs = document.createElement('canvas') ;  /* background canvas */
+bcnvs.width = width ;
+bcnvs.height  = height ;
+
+bctx = bcnvs.getContext('2d') ;
+
+/* getting a handle on the images */
+var Mercury = document.getElementById('Mercury') ;  
+earth.scale = 0.15 ;
+
+var Sun   = document.getElementById('Sun') ;
+sun.scale = .2 ;
+
+/*-------------------------------------------------------------------------
+ * Convert x, and y into canvas pixel coordinate system 
+ *-------------------------------------------------------------------------
+ */
+var minX = -1 ;
+var maxX = 1 ;
+var minY = -1 ;
+var maxY = 1 ;
+
+function Px(x){
+    return width*(x-minX)/(maxX-minX) ;
+}
+function Py(y){
+    return height*(maxY-y)/(maxY-minY) ;
+}
+
+var running = true ;
+var time = 0. ; 
+var dt = 0.01 ;         // time step size
+var omega = 0. ;        // Initial angular velocity
+var theta = Math.PI/3. ;// Initial angle
+var length = 0.1 ;      // length of the pendulum
+var g   = 9.81 ;        // acceleration due to gravity
+
+function accel(th){
+    return -g*Math.sin(th)/length ;
+}
+
+function k(t){
+   return dt*accel(t) ;
+}
+function l(o){
+    return dt*o ;
+}
+
+function marchTime(){
+    var alpha = accel(theta) ;
+    time += dt ;
+    /* 
+       1.   Start with Euler Time-Stepping and Observe the bahaviour 
+            of the pendulum. 
+       2.   Try to implement a verlet integration. 
+       3.   How does the time step size affect the solution in each case?
+    
+    */
+    var k1 = k(theta) ;
+    var l1 = l(omega) ;
+    var k2 = k(theta+l1/2.) ;
+    var l2 = l(omega+k1/2.) ;
+    var k3 = k(theta+l2/2.) ;
+    var l3 = l(omega+k2/2.) ;
+    var k4 = k(theta+l3 ) ;
+    var l4 = l(omega+k3 ) ;
+    omega = omega + (k1+2.*k2+2.*k3+k4)/6. ;
+    theta = theta + (l1+2.*l2+2.*l3+l4)/6. ;
+}
+
+function draw(){
+    fctx.setTransform(1,0.,0.,1.,0.,0) ;    /*  Reset the transformation 
+                                                matrix                  */
+    fctx.clearRect(0,0,width,height) ;      /*  clear the canvas        */
+    fctx.translate(width/2.,height/2.) ;    /*  translate to the center
+                                                of the canvas           */
+    fctx.rotate(theta);                     /*  rotate the drawing by
+                                                theta clockwise         */
+    fctx.drawImage(pnd,-pnd.width/2.,0.) ;  /*  draw the pendulum by 
+                                                shifting the center by 
+                                                half the width of the 
+                                                pendulum                */
+}
+
+function run(){
+    if (running){
+        marchTime() ;
+    }
+    draw() ;
+    setTimeout(run,20) ;
+}
+
+</script>
+</body>
+</html>
+
